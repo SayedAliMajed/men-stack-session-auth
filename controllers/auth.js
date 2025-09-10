@@ -15,23 +15,31 @@ res.render('auth/sign-in.ejs');
 // Sign-up create new user
 
 router.post('/sign-up', async (req, res) => {
-const userInDatabase = await User.findOne({ username: req.body.username });
+  const userInDatabase = await User.findOne({ username: req.body.username });
 
-if (userInDatabase) {
-    return res.send('Username or Password is invalid');
-}
-
-if (req.body.password !== req.body.confirmPassword) {
+  if (req.body.password !== req.body.confirmPassword) {
     return res.send('Password and Confirm Password must match');
-}
+  }
 
-const hashedPassword = bcrypt.hashSync(req.body.password, 10);
-req.body.password = hashedPassword;
+  if (userInDatabase) {
+    return res.send('Username or Password is invalid');
+  }
 
-const user = await User.create(req.body);
-res.send(`Thanks for signing up ${user.username}`);
+  const hashedPassword = bcrypt.hashSync(req.body.password, 10);
+  req.body.password = hashedPassword;
 
+  const user = await User.create(req.body);
+
+  req.session.user = {
+    username: user.username,
+  };
+
+  req.session.save(() => {
+    res.redirect('/');
+  });
 });
+
+
 
 // Sign-in 
 
@@ -42,12 +50,33 @@ router.post('/sign-in', async (req,res) =>{
     }
 
     const validPassword = bcrypt.compareSync(
-        req.body.validPassword,
+        req.body.password,
         userInDatabase.password
     );
 
     if (!validPassword) {
         return res.send('Username or Password is invalid');
     }
+
+    req.session.user = {
+        username: userInDatabase.username,
+        _id: userInDatabase._id,
+        
+    };
+    req.session.save(() => {
+         res.redirect('/');
+    }); 
 });
+
+//  sign-out
+router.get('/sign-out', (req, res) => {
+    req.session.destroy(() => {
+        res.redirect('/');
+    });
+
+});
+
+
+
+
 module.exports = router;
