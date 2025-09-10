@@ -8,7 +8,12 @@ const methodOverride = require("method-override");
 const morgan = require("morgan");
 
 // Set the port from environment variable or default to 3000
-const port = process.env.PORT ? process.env.PORT : "3000";
+let port;
+if (process.env.PORT) {
+  port = process.env.PORT;
+} else {
+  port = 3000;
+}
 
 mongoose.connect(process.env.MONGODB_URI);
 
@@ -22,6 +27,14 @@ app.use(express.urlencoded({ extended: false }));
 app.use(methodOverride("_method"));
 // Morgan for logging HTTP requests
 app.use(morgan('dev'));
+
+
+// GET /
+app.get("/", async (req, res) => {
+  res.render('index.ejs');
+});
+
+
 
 app.listen(port, () => {
   console.log(`The express app is ready on port ${port}!`);
